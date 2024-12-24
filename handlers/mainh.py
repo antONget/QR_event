@@ -8,7 +8,14 @@ from database import req
 import logging as lg
 import asyncio
 
+
+
+
+
 router = Router()
+
+
+
 
 
 @router.message(CommandStart())
@@ -24,6 +31,9 @@ async def start(message: types.Message, command: CommandObject):
                                      reply_markup = await kb.confirm_user(user_id, event_id))
             else:
                 await message.answer(f'<b>Этот пользователь {"@"+str(user.username) if user.username else "с tg_id: "+str(user.user_id)} - {user.full_name} уже был отмечен.</b>')
+            
+            
+            
         return
     
     await req.add_user(user_id=message.from_user.id, 
@@ -36,43 +46,69 @@ async def start(message: types.Message, command: CommandObject):
                         reply_markup=await kb.main_user_kb())
 
 
+
+
+
+
+
+
+
 @router.callback_query(F.data.startswith('user_'))
 async def user_main(cb: types.CallbackQuery, bot: Bot):
     action = cb.data.split('_')[1]
     await cb.answer('')
     if action == 'afisha':
+
+        if len(await req.get_all_events()) == 0:
+            await cb.message.edit_text('<b>На данный момент нет активных мероприятий!</b>',
+                                       reply_markup= await kb.back_to_user()
+                                        )
+            return
+
         first_actieve_event = await req.get_first_active_event()
 
         events_ids: list[int] = [event.id for event in await req.get_all_events() if event.active]
+    
+        print(cb.data)
+        print(events_ids)
+        
         try:
             try:
                 second_event = [i.id for i in await req.get_all_events() if i.active][1]
             except IndexError:
                 second_event = [i.id for i in await req.get_all_events() if i.active][0]
+            
             event = await req.get_event_by_id(first_actieve_event.id)
 
             photo_ids = event.photo_ids.split(';')
             caption = lexicon.CARD_INFO.format(event.name, event.description, event.started_at)
+
+
+            # if action == 'next':
             await cb.message.answer_media_group(
-                media=await utils.create_media_group(
+            media=await utils.create_media_group(
                     caption=caption,
-                    list_img_ids=photo_ids))
+                    list_img_ids=photo_ids
+                    )
+            )
 
             await cb.message.answer(
                 text='➖➖➖➖➖➖➖➖➖',
                 reply_markup=await kb.start_event_kb(len_events=len(events_ids),
-                                                     event_id=first_actieve_event.id,
-                                                     second_event=second_event)
+                                                    event_id=first_actieve_event.id,
+                                                    second_event=second_event)
 
             )
         except AttributeError:
             await cb.message.edit_text('<b>На данный момент нет активных мероприятий!</b>',
-                                       reply_markup= await kb.back_to_user())
-
+                                       reply_markup= await kb.back_to_user()
+                                        )
+    
+    
     elif action == 'qrs':
         # try:
         first_user_event = (await req.get_user_by_id(cb.from_user.id)).events_ids.split(',')[0]
-        if first_user_event != '':
+        if first_user_event!='':
             event = await req.get_event_by_id(int(first_user_event))
             try:
                 await cb.message.edit_text('Посмотреть QR-коды:', reply_markup=await kb.view_user_events(
@@ -93,13 +129,12 @@ async def user_main(cb: types.CallbackQuery, bot: Bot):
                         except AttributeError:
                             pass
                     
-                    await cb.message.edit_text('<b>Вы еще не зарегистрированы на мероприятия.\n\n'
-                                               'Или мероприятие было удалено</b>',
+                    await cb.message.edit_text('<b>Вы еще не зарегистрированы на мероприятия.\n\nИли мероприятие было удалено</b>', 
                                                reply_markup= await kb.back_to_user())
         else:
             try:
                 await cb.message.edit_text('<b>Вы еще не зарегистрированы на мероприятия.</b>',
-                                           reply_markup= await kb.back_to_user())
+                                        reply_markup= await kb.back_to_user())
             except exceptions.TelegramBadRequest:
                 await cb.message.answer('<b>Вы еще не зарегистрированы на мероприятия.</b>',
                                         reply_markup=await kb.back_to_user())
@@ -161,8 +196,19 @@ async def user_main(cb: types.CallbackQuery, bot: Bot):
         await cb.message.edit_text(text=f'<b>Отмена прохождения на мероприятие!</b>')
 
 
+
+
+
+
+
+
+
+
 @router.callback_query(F.data.startswith('UserShow_'))
 async def view_acrchive_events(cb: types.CallbackQuery, bot: Bot):
+   
+
+    
     await cb.answer('')
     print(cb.data)
     event_id = int(cb.data.split('_')[-2])
@@ -170,7 +216,7 @@ async def view_acrchive_events(cb: types.CallbackQuery, bot: Bot):
 
     event = await req.get_event_by_id(event_id)
     # stat = lexicon.EVENT_STAT.format(event.name, event.started_at, event.reg_count, event.enter_count)
-    stat = event.name
+    stat=event.name
 
     try:
         try:
