@@ -152,55 +152,37 @@ async def confirm_send(cb: types.CallbackQuery, bot: Bot, state: FSMContext):
     try:
         data['photo']
         for user in users:
-            await bot.send_photo(chat_id=user.user_id, 
-                                photo=data['photo'],
-                                caption='<strong>'+data['text']+'</strong>', 
-                                parse_mode='html'
-                                )
-        
+            try:
+                await bot.send_photo(chat_id=user.user_id,
+                                    photo=data['photo'],
+                                    caption=data['text'],
+                                    parse_mode='html'
+                                    )
+            except:
+                pass
         await cb.message.edit_text(text='Сообщения отправлены!', reply_markup=await kb.admin_panel_kb())
         
         await state.clear()
     except KeyError:
         for user in users:
-            await bot.send_message(chat_id=user.user_id, 
-                                   text='<strong>'+data['text']+'</strong>', 
-                                   parse_mode='html')
-        
+            try:
+                await bot.send_message(chat_id=user.user_id,
+                                       text=data['text'],
+                                       parse_mode='html')
+            except:
+                pass
         await cb.message.edit_text(text='Сообщения отправлены!', reply_markup=await kb.admin_panel_kb())
         
         await state.clear()
 
 
-@router.callback_query(F.data=='no_send')
+@router.callback_query(F.data == 'no_send')
 async def back(cb: types.CallbackQuery, bot: Bot, state: FSMContext):
     await cb.answer('')
     await bot.edit_message_text(text='Отмена рассылки', reply_markup=await kb.admin_panel_kb(),
                     chat_id=cb.message.chat.id, message_id=cb.message.message_id)
     
     await state.clear()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @router.callback_query(F.data == 'back')
 async def back(cb: types.CallbackQuery, state: FSMContext):
@@ -227,11 +209,6 @@ async def admin_main(cb: types.CallbackQuery, state: FSMContext):
     elif action == 'view':
         await cb.message.edit_text('<b>Выберите тип мероприятия:</b>', reply_markup=await kb.view_events())
 
-  
-
-
-
-
 
 @router.callback_query(F.data == 'AdminActive')
 async def active_events(cb: types.CallbackQuery, state: FSMContext):
@@ -243,6 +220,7 @@ async def active_events(cb: types.CallbackQuery, state: FSMContext):
             )
     except AttributeError:
         await cb.message.edit_text('<b>Активных мероприятий нет.</b>', reply_markup=await kb.admin_panel_kb())
+
 
 @router.callback_query(F.data == 'AdminArchive')
 async def active_events(cb: types.CallbackQuery, state: FSMContext):
