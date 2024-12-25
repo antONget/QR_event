@@ -46,8 +46,16 @@ async def start(message: types.Message, command: CommandObject):
                         reply_markup=await kb.main_user_kb())
 
 
-
-
+@router.callback_query(F.data == 'UserStart')
+async def startUserFromChannel(cb: types.CallbackQuery, bot: Bot):
+    await req.add_user(user_id=cb.from_user.id, 
+                       username=cb.from_user.username,
+                       full_name=cb.from_user.full_name
+                       )
+    await cb.message.edit_text(f'Привет, <i>{cb.from_user.full_name}</i>! '
+                        'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
+                        '\n\n<b>Выбери действие:</b>',
+                        reply_markup=await kb.main_user_kb())
 
 
 

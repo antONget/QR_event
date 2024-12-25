@@ -1,40 +1,60 @@
-from aiogram import Bot, Dispatcher
+from aiogram import BaseMiddleware
+from aiogram.types import TelegramObject, Message, ChatMemberMember, ChatMemberAdministrator, ChatMemberOwner
+from typing import Any, Callable, Dict, Awaitable
+
+
 from handlers import mainh, admin, navigator_events
 
 import logging as lg
 import asyncio
-from aiogram.types import ErrorEvent
-from aiogram.types import FSInputFile
-import traceback
-from typing import Any, Dict
 
-from settings import conf, sheduler
-logger = lg.getLogger(__name__)
+from settings import conf, scheduler, kb
+
+
+
+
+
+
+class SubscribeOnChannel(BaseMiddleware):
+
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: Dict[str, Any]
+    ) -> Any:
+
+            u_status = await event.bot.get_chat_member(chat_id=int(conf.get_env_key('CHANNEL_ID')), user_id=event.from_user.id)
+            if isinstance(u_status, ChatMemberMember) or isinstance(u_status, ChatMemberAdministrator) \
+                or isinstance(u_status, ChatMemberOwner) :
+                return await handler(event, data)  
+
+            await event.bot.send_message(text="Ты не подписался на канал!", chat_id=event.from_user.id, reply_markup=await kb.subscribe_kb())
+    
+
+
+
+
+
+
+
 
 
 async def main():
     lg.basicConfig(level=lg.INFO,
-                   # filename="py_log.log",
-                   # filemode='w',
-                   format='%(filename)s:%(lineno)d #%(levelname)-8s '
-                          '[%(asctime)s] - %(name)s - %(message)s')
+                        format="%(asctime)s - [%(levelname)s] - %(name)s - "
+                               "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s",
+                    filename='logs.txt',
+                    filemode='w'
+                        )
     bot, dp = conf.bot, conf.dp
     
     await bot.delete_webhook(drop_pending_updates=True)
+    
     dp.include_routers(mainh.router, admin.router, navigator_events.router)
-    await sheduler.archiever.start_scheduler()
-
-    @dp.error()
-    async def error_handler(event: ErrorEvent):
-        logger.critical("Критическая ошибка: %s", event.exception, exc_info=True)
-        await bot.send_message(chat_id=843554518,
-                               text=f'{event.exception}')
-        formatted_lines = traceback.format_exc()
-        text_file = open('error.txt', 'w')
-        text_file.write(str(formatted_lines))
-        text_file.close()
-        await bot.send_document(chat_id=843554518,
-                                document=FSInputFile('error.txt'))
+    dp.callback_query.outer_middleware(SubscribeOnChannel())
+    dp.message.outer_middleware(SubscribeOnChannel())
+    await scheduler.archiever.start_scheduler(bot)
 
     await dp.start_polling(bot)
 

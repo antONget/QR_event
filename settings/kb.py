@@ -2,6 +2,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 
 from database import req
+from settings import conf
 import math
 
 
@@ -14,6 +15,8 @@ async def main_user_kb() :
                 InlineKeyboardButton(text="Мои QR", callback_data="user_qrs"),
                 width=1
             ).as_markup()
+
+
 
 
 async def start_event_kb(len_events, event_id, second_event):
@@ -60,7 +63,16 @@ async def end_event_kb(len_events, last_id, event_id):
             ).as_markup()
 
 
+async def subscribe_kb():
+    return InlineKeyboardBuilder().row(
+                InlineKeyboardButton(text="Подписаться на канал", url=conf.get_env_key('CHANNEL_LINK')),
+                InlineKeyboardButton(text="Я подписан", callback_data="UserStart"),
+                width=1
+            ).as_markup()
+
+
 """  ADMIN PART  """
+
 
 
 async def confirm_user(user_id, event_id):
@@ -71,13 +83,15 @@ async def confirm_user(user_id, event_id):
             ).as_markup()
 
 
+
+
 async def admin_panel_kb():
     return InlineKeyboardBuilder().row(
                 InlineKeyboardButton(text="Добавление нового мероприятия", callback_data="admin_NewEvent"),
                 InlineKeyboardButton(text="Просмотр мероприятий", callback_data="admin_view"),
+                InlineKeyboardButton(text="Рассылка пользователям", callback_data="AdminSend"),
                 width=1
             ).as_markup()
-
 
 async def view_events():
     return InlineKeyboardBuilder().row(
@@ -86,7 +100,6 @@ async def view_events():
                 InlineKeyboardButton(text="Назад", callback_data=f"back"),
                 width=1
             ).as_markup()
-
 
 async def view_archieved_events(event_id, now):
     events = [(event.name, event.id) for event in await req.get_all_events() if event.active !=1 ]
@@ -101,10 +114,15 @@ async def view_archieved_events(event_id, now):
                 callback_data=f'AdminShowArchive_{i[1]}_{now}'
                 )
             )
-        c += 1
+        c+=1
         if c == 6:
             break
+    # print(now)
+    # print('events', events)
+    # print('arch', events)
 
+            
+    # buttns.append()
     return InlineKeyboardBuilder().row(
             *buttns,
             width=2
@@ -136,7 +154,12 @@ async def view_active_events(event_id, now):
         c+=1
         if c == 6:
             break
+    # print(now)
+    # print('events', events)
+    # print('act', events_in_use)
 
+            
+    # buttns.append()
     return InlineKeyboardBuilder().row(
             *buttns,
             width=2
@@ -153,11 +176,15 @@ async def view_active_events(event_id, now):
         ).as_markup()
 
 
+
+
+
 async def cancel():
     return InlineKeyboardBuilder().row(
                 InlineKeyboardButton(text="Отмена", callback_data="cancel"),
                 width=1
             ).as_markup()
+
 
 
 async def try_add_photo_kb():
@@ -179,12 +206,21 @@ async def continue_date():
             ).as_markup()
 
 
+
 async def check_all_is_ok():
     return InlineKeyboardBuilder().row(
                 InlineKeyboardButton(text="Да", callback_data="all_is_ok"),
                 InlineKeyboardButton(text="Отменить заполнение", callback_data="cancel"),
                 width=1
             ).as_markup()
+
+# async def event_statistics(event_id):
+#     return InlineKeyboardBuilder().row(
+#                 InlineKeyboardButton("Статистика  по мероприятию", callback_data=f"admin_statistics_{event_id}"),
+#                 InlineKeyboardButton("Назад", callback_data=f"back_events_{event_id}"),
+#                 width=1
+#             ).as_markup()
+
 
 
 async def back_to_user():
@@ -212,19 +248,22 @@ async def view_user_events(event_id, now:int, user_id: int):
                 callback_data=f'UserShow_{i}_{now}'
                 )
             )
-        c += 1
+        c+=1
         if c == 6:
             break
+    # print(now)
+    # print('events', events)
+    # print('act', events_in_use)
 
+            
+    # buttns.append()
     return InlineKeyboardBuilder().row(
             *buttns,
             width=2
         ).row(
-            InlineKeyboardButton(text=f"⬅️", callback_data=f"UserShow_{event_id}_{now-6 if now > 5 else 0}")
-            if now >= 5 else InlineKeyboardButton(text=f"⏹️", callback_data=f"None"),
+            InlineKeyboardButton(text=f"⬅️", callback_data=f"UserShow_{event_id}_{now-6 if now > 5 else 0}") if now >= 5 else InlineKeyboardButton(text=f"⏹️", callback_data=f"None"),
             InlineKeyboardButton(text=f"{(now+6)//6}/{math.ceil(len(user_events)/6)}", callback_data="None"),
-            InlineKeyboardButton(text="➡️", callback_data=f"UserShow_{event_id}_{now+6}") if now+6 < len(user_events)
-            else InlineKeyboardButton(text=f"⏹️", callback_data=f"None"),
+            InlineKeyboardButton(text="➡️", callback_data=f"UserShow_{event_id}_{now+6}") if now+6 < len(user_events) else InlineKeyboardButton(text=f"⏹️", callback_data=f"None"),
             width=3
         ).row(
             InlineKeyboardButton(text="Назад", callback_data=f"user_back"),

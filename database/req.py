@@ -41,6 +41,16 @@ async def get_user_by_id(id: int) -> User:
         s = await session.execute(select(User).where(User.user_id == id))
         return s.scalar_one()
 
+async def get_users() -> list[User]:
+    async with async_session() as session:
+        try:
+            s = await session.execute(select(User))
+            return [i for i in s.scalars()]
+        except Exception as e:
+            lg.error(e)
+            return e
+
+
 async def get_user_event_ids(user_id: int) -> list[str]:
     async with async_session() as session:
         s = (await session.execute(select(User).where(User.user_id == user_id))).scalar_one()

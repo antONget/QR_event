@@ -1,9 +1,9 @@
-from aiogram import Router, types, F
+from aiogram import Router, types, F, Bot
 from aiogram.filters import Command, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.exceptions import TelegramBadRequest
 
-from handlers.states import AddQR
+from handlers.states import AddQR, AdminSendAll
 from database import req
 
 from settings import conf, kb, utils, lexicon
@@ -22,7 +22,16 @@ class AdminProtect(Filter):
         return str(message.from_user.id) in conf.get_env_key('ADMIN_IDS').split(',')
 
 
+
 router = Router()
+
+
+
+
+
+
+
+
 
 
 @router.message(Command('logs'))
@@ -31,9 +40,166 @@ async def logs(message: types.Message):
         await message.answer_document(document=types.FSInputFile('logs.txt', 'logs.txt'))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @router.message(Command('apanel'), AdminProtect())
 async def admin_panel(message: types.Message):
     await message.reply('<b>Добро пожаловать, админ!</b>', reply_markup=await kb.admin_panel_kb())
+
+
+
+
+
+
+
+
+
+@router.callback_query(F.data == 'AdminSend', AdminProtect())
+async def send_2_all(cb: types.CallbackQuery, state: FSMContext):
+    await cb.message.edit_text("<strong>Введите текст рассылки: </strong>",
+                         reply_markup= await kb.cancel(),
+                         parse_mode='html'
+    )
+    await state.set_state(AdminSendAll.text)
+
+
+@router.message(AdminSendAll.text, AdminProtect())
+async def send_text1(message: types.Message, bot: Bot, state: FSMContext):
+    text = message.text
+    await state.update_data(text=text)
+
+    await message.answer('Отправьте фото: ', 
+                         reply_markup=kb.InlineKeyboardBuilder().row(
+                            kb.InlineKeyboardButton(text='Пропустить фото', callback_data='cancel_photo'),
+                            kb.InlineKeyboardButton(text="Отмена", callback_data="cancel"),
+                    width=1
+        ).as_markup())
+    await state.set_state(AdminSendAll.photo)
+    
+
+
+
+
+@router.callback_query(F.data == 'cancel_photo')
+async def cancel_photo(cb: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+
+    await cb.message.edit_text(text='<strong>'+data['text']+'</strong>', 
+                               parse_mode='html')
+    
+    await cb.message.answer('<strong>Вы уверены, что хотите отправить сообщение всем пользователям?</strong>',
+                         reply_markup=kb.InlineKeyboardBuilder().row(
+        *[
+            kb.InlineKeyboardButton(text='Да', callback_data='confirm_send'),
+            kb.InlineKeyboardButton(text='Нет', callback_data='no_send')
+        ]
+        ).as_markup(),
+        parse_mode='html')
+
+
+@router.message(AdminSendAll.photo, F.photo)
+async def get_photo(message: types.Message, bot: Bot, state: FSMContext):
+    # lg.info(message.photo[-1].file_id)
+    photo_id = message.photo[-1].file_id
+
+
+    data = await state.get_data()
+    
+    await state.update_data(photo=photo_id)
+    await message.answer_photo(photo=photo_id, 
+                               caption='<strong>'+data['text']+'</strong>', 
+                               parse_mode='html')
+
+    await message.answer('<strong>Вы уверены, что хотите отправить сообщение всем пользователям?</strong>',
+                         reply_markup=kb.InlineKeyboardBuilder().row(
+        *[
+            kb.InlineKeyboardButton(text='Да', callback_data='confirm_send'),
+            kb.InlineKeyboardButton(text='Нет', callback_data='no_send')
+        ]
+        ).as_markup(),
+        parse_mode='html')
+    
+
+
+
+
+
+
+
+
+@router.callback_query(F.data=='confirm_send')
+async def confirm_send(cb: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await cb.answer('')
+    data = await state.get_data()
+
+    await cb.message.answer(text='Отправка сообщений...')
+    users = await req.get_users()
+    
+    try:
+        data['photo']
+        for user in users:
+            await bot.send_photo(chat_id=user.user_id, 
+                                photo=data['photo'],
+                                caption='<strong>'+data['text']+'</strong>', 
+                                parse_mode='html'
+                                )
+        
+        await cb.message.edit_text(text='Сообщения отправлены!', reply_markup=await kb.admin_panel_kb())
+        
+        await state.clear()
+    except KeyError:
+        for user in users:
+            await bot.send_message(chat_id=user.user_id, 
+                                   text='<strong>'+data['text']+'</strong>', 
+                                   parse_mode='html')
+        
+        await cb.message.edit_text(text='Сообщения отправлены!', reply_markup=await kb.admin_panel_kb())
+        
+        await state.clear()
+
+
+@router.callback_query(F.data=='no_send')
+async def back(cb: types.CallbackQuery, bot: Bot, state: FSMContext):
+    await cb.answer('')
+    await bot.edit_message_text(text='Отмена рассылки', reply_markup=await kb.admin_panel_kb(),
+                    chat_id=cb.message.chat.id, message_id=cb.message.message_id)
+    
+    await state.clear()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @router.callback_query(F.data == 'back')
@@ -43,10 +209,9 @@ async def back(cb: types.CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'cancel')
 async def cancel(cb: types.CallbackQuery, state: FSMContext):
-    try:
-        await state.clear()
-    except:
-        pass
+    try: await state.clear()
+    except: pass
+    
     await cb.message.edit_text('Отмена выполнения.', reply_markup=await kb.admin_panel_kb())
 
 
@@ -62,6 +227,11 @@ async def admin_main(cb: types.CallbackQuery, state: FSMContext):
     elif action == 'view':
         await cb.message.edit_text('<b>Выберите тип мероприятия:</b>', reply_markup=await kb.view_events())
 
+  
+
+
+
+
 
 @router.callback_query(F.data == 'AdminActive')
 async def active_events(cb: types.CallbackQuery, state: FSMContext):
@@ -73,7 +243,6 @@ async def active_events(cb: types.CallbackQuery, state: FSMContext):
             )
     except AttributeError:
         await cb.message.edit_text('<b>Активных мероприятий нет.</b>', reply_markup=await kb.admin_panel_kb())
-
 
 @router.callback_query(F.data == 'AdminArchive')
 async def active_events(cb: types.CallbackQuery, state: FSMContext):
@@ -104,6 +273,8 @@ async def show_active_events(cb: types.CallbackQuery, state: FSMContext):
         await asyncio.sleep(1.2)
         await msg2.edit_text(stat, reply_markup=await kb.view_active_events(event_id, step))
 
+    
+
 
 @router.callback_query(F.data.startswith('AdminShowArchive_'))
 async def view_acrchive_events(cb: types.CallbackQuery, state: FSMContext):
@@ -123,10 +294,16 @@ async def view_acrchive_events(cb: types.CallbackQuery, state: FSMContext):
         await msg.edit_text(stat, reply_markup=await kb.view_archieved_events(event_id, step))
 
 
+
+
+
+
 @router.callback_query(F.data == 'back_view')
 async def back_to_admin_panel(cb: types.CallbackQuery, state: FSMContext):
     await cb.answer('')
     await cb.message.edit_text('<b>Вы вернулись в просмотр мероприятий</b>', reply_markup=await kb.view_events())
+
+
 
 
 @router.callback_query(F.data.startswith('AdminDel_'))
@@ -153,8 +330,11 @@ async def del_event(cb: types.CallbackQuery):
         await cb.message.edit_text('<b>Ошибка при переводе мероприятия в архив.</b>', reply_markup=await kb.admin_panel_kb())
 
 
-'''ADD QR'''
 
+
+
+
+'''ADD QR'''
 
 @router.message(AddQR.name, AdminProtect())
 async def add_qr_name(message: types.Message, state: FSMContext):
@@ -184,6 +364,8 @@ async def add_qr_photos(message: types.Message, state: FSMContext):
             data['photos'].append(photo)
         except Exception as e:
             lg.error(e)
+
+        # lg.info(data)
 
         await state.update_data(photos=list(set(data['photos'])))
         
@@ -246,6 +428,16 @@ async def back_view(cb: types.CallbackQuery, state: FSMContext):
     lg.info(data)
     await req.add_event(**data)
     await cb.message.edit_text('Мероприятие успешно добавлено!', reply_markup=await kb.admin_panel_kb())
+
+
+
+
+
+
+
+
+
+
 
 
 @router.callback_query(F.data == 'None')

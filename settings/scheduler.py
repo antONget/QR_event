@@ -25,8 +25,11 @@ class EventsArchiver:
                 for user_data in registered_users:
                     if str(event.id) in user_data.events_ids.split(','):
                         await bot.send_message(chat_id=user_data.user_id,
-                                               text=f'Напоминаю! Вы зарегистрировались на {event.name}\n'
-                                                    f'<b>Начало {event.started_at.strftime("%d/% m/%Y-%H:%M")}</b>')
+                                               text=f'<b>Напоминаю! Вы зарегестрировались на {event.name}\n'
+                                               f'Оно начинается <b>{event.started_at.strftime('%d/%m/%Y-%H:%M')}</b></b>')
+                        
+        
+        # print("Запланированная рассылка напоминаний завершена")
 
     async def start_scheduler(self, bot: Bot):
         self.scheduler.add_job(self.put_events_to_archive, 'interval', minutes=self.interval_minutes)
@@ -36,3 +39,5 @@ class EventsArchiver:
 
 archiever = EventsArchiver()
 
+# import asyncio
+# asyncio.run(archiever.start_scheduler())
