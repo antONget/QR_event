@@ -68,11 +68,16 @@ async def startUserFromChannel(cb: types.CallbackQuery, bot: Bot):
     await req.add_user(user_id=cb.from_user.id, 
                        username=cb.from_user.username,
                        full_name=cb.from_user.full_name)
-    await cb.message.edit_text(text=f'Привет, <i>{cb.from_user.full_name}</i>! '
+    try:
+        await cb.message.edit_text(text=f'Привет, <i>{cb.from_user.full_name}</i>! '
                                     f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
                                     f'\n\n<b>Выбери действие:</b>',
                                reply_markup=await kb.main_user_kb())
-
+    except:
+        await cb.message.answer(text=f'Привет, <i>{cb.from_user.full_name}</i>! '
+                                    f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
+                                    f'\n\n<b>Выбери действие:</b>',
+                               reply_markup=await kb.main_user_kb())
 
 @router.callback_query(F.data.startswith('user_'))
 async def user_main(cb: types.CallbackQuery, bot: Bot):
@@ -172,7 +177,7 @@ async def user_main(cb: types.CallbackQuery, bot: Bot):
                     ),
                 caption='<b><i>Вы зарегистрированы на мероприятие!</i>\n'
                         'Вот ваш QR-код для прохода на него.\n\n'
-                        'P.S. Ваши QR-коды можно найти также в <i>"Мой QR"</i>.</b>',
+                        'P.S. Все ваши активные QR-коды можно найти по кнопке <i>"Мой QR"</i>.</b>',
                 reply_markup=await kb.main_user_kb()
                                     )
             return
