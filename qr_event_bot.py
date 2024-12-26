@@ -5,7 +5,7 @@ from aiogram.types import FSInputFile
 
 from typing import Any, Callable, Dict, Awaitable
 
-from handlers import mainh, admin, navigator_events
+from handlers import mainh, admin, navigator_events, handler_edit_list_personal
 from notify_admins import on_startup_notify
 import logging as lg
 import asyncio
@@ -43,7 +43,7 @@ async def main():
 
     await bot.delete_webhook(drop_pending_updates=True)
     await on_startup_notify(bot=bot)
-    dp.include_routers(mainh.router, admin.router, navigator_events.router)
+    dp.include_routers(mainh.router, admin.router, navigator_events.router, handler_edit_list_personal.router)
     dp.callback_query.outer_middleware(SubscribeOnChannel())
     dp.message.outer_middleware(SubscribeOnChannel())
     await scheduler.archiever.start_scheduler(bot)

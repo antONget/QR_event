@@ -90,6 +90,7 @@ async def admin_panel_kb():
                 InlineKeyboardButton(text="Добавление нового мероприятия", callback_data="admin_NewEvent"),
                 InlineKeyboardButton(text="Просмотр мероприятий", callback_data="admin_view"),
                 InlineKeyboardButton(text="Рассылка пользователям", callback_data="AdminSend"),
+                InlineKeyboardButton(text="👨‍💼 Персонал 👨‍💼", callback_data="personal"),
                 width=1
             ).as_markup()
 

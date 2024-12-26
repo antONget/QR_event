@@ -33,6 +33,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String, nullable=True)
     full_name: Mapped[str] = mapped_column(String, nullable=True)
     events_ids: Mapped[str] = mapped_column(String, default='', nullable=False)
+    role: Mapped[str] = mapped_column(String, default='user')
 
 
 async def async_main():

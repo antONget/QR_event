@@ -1,12 +1,11 @@
 from database.models import Event, User, async_session
-
-
 from sqlalchemy import select, update, null, delete
 import logging as lg
-
+from dataclasses import dataclass
 
 
 """ ADD METHODS"""
+
 
 async def add_event(**data):
     '''
@@ -31,15 +30,14 @@ async def add_user(**data):
         await session.commit()
 
 
-
 """ GET METHODS """
-
 
 
 async def get_user_by_id(id: int) -> User:
     async with async_session() as session:
-        s = await session.execute(select(User).where(User.user_id == id))
-        return s.scalar_one()
+        return await session.scalar(select(User).where(User.user_id == id))
+
+
 
 async def get_users() -> list[User]:
     async with async_session() as session:
@@ -57,13 +55,12 @@ async def get_user_event_ids(user_id: int) -> list[str]:
         return s.events_ids.split(',')
      
 
-
-
 async def get_first_archive_event() -> Event:
     async with async_session() as session:
         s = (await session.execute(select(Event).where(Event.active == 0).order_by(Event.id.asc()).limit(1))).scalar_one_or_none()
         return s if s else 0
-    
+
+
 async def get_first_active_event() -> Event:
     async with async_session() as session:
         s = (await session.execute(select(Event).where(Event.active == 1).order_by(Event.id.asc()).limit(1))).scalar_one_or_none()
@@ -86,9 +83,18 @@ async def get_event_by_id(id: int) -> Event:
         except Exception as e:
             lg.error(e)
             return e
-        
 
 
+async def get_users_role(role: str) -> list[User]:
+    """
+    Получаем список всех пользователей с определенной ролью
+    :return:
+    """
+    lg.info(f'get_users_role')
+    async with async_session() as session:
+        users = await session.scalars(select(User).where(User.role == role))
+        list_users_role = [user for user in users]
+        return list_users_role
 
 
 '''  DELETE METHODS  '''
@@ -103,6 +109,32 @@ async def delete_event(id: int):
             await session.rollback()
 
 
+@dataclass
+class UserRole:
+    user = "user"
+    admin = "admin"
+    dispatcher = "dispatcher"
+    manager = "manager"
+    personal = "personal"
+    controller = "controller"
+
+
+'''  UPDATE METHODS  '''
+
+
+async def set_user_role(tg_id: int, role: str):
+    """
+    Обновляем роль пользователя
+    :param tg_id:
+    :param role:
+    :return:
+    """
+    lg.info(f'set_user_role: {role}')
+    async with async_session() as session:
+        user: User = await session.scalar(select(User).where(User.user_id == tg_id))
+        if user:
+            user.role = role
+            await session.commit()
 
 
 import datetime

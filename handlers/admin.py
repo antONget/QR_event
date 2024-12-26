@@ -404,7 +404,12 @@ async def back_view(cb: types.CallbackQuery, state: FSMContext):
     data['started_at'] = started_at
     data['id'] = len(await req.get_all_events())
     lg.info(data)
-    await req.add_event(**data)
+    data_event = {'id': len(await req.get_all_events()),
+                  'name': data['name'],
+                  'description': data['description'],
+                  'photo_ids': photo_ids,
+                  'started_at': started_at}
+    await req.add_event(**data_event)
     await cb.message.edit_text('Мероприятие успешно добавлено!', reply_markup=await kb.admin_panel_kb())
 
 
