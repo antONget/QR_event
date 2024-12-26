@@ -29,8 +29,12 @@ async def process_change_list_personal(callback: CallbackQuery) -> None:
     :return:
     """
     logging.info(f'process_change_list_personal: {callback.message.chat.id}')
-    await callback.message.edit_text(text="Выберите роль которую вы хотите изменить.",
-                                     reply_markup=kb.keyboard_select_role())
+    try:
+        await callback.message.edit_text(text="Выберите роль которую вы хотите изменить.",
+                                         reply_markup=kb.keyboard_select_role())
+    except:
+        await callback.message.answer(text="Выберите роль которую вы хотите изменить.",
+                                      reply_markup=kb.keyboard_select_role())
     await callback.answer()
 
 # @router.callback_query(F.data == 'add_user')
