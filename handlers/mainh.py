@@ -70,14 +70,15 @@ async def startUserFromChannel(cb: types.CallbackQuery, bot: Bot):
                        full_name=cb.from_user.full_name)
     try:
         await cb.message.edit_text(text=f'Привет, <i>{cb.from_user.full_name}</i>! '
-                                    f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
-                                    f'\n\n<b>Выбери действие:</b>',
-                               reply_markup=await kb.main_user_kb())
+                                        f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
+                                        f'\n\n<b>Выбери действие:</b>',
+                                   reply_markup=await kb.main_user_kb())
     except:
         await cb.message.answer(text=f'Привет, <i>{cb.from_user.full_name}</i>! '
-                                    f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
-                                    f'\n\n<b>Выбери действие:</b>',
-                               reply_markup=await kb.main_user_kb())
+                                     f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
+                                     f'\n\n<b>Выбери действие:</b>',
+                                reply_markup=await kb.main_user_kb())
+
 
 @router.callback_query(F.data.startswith('user_'))
 async def user_main(cb: types.CallbackQuery, bot: Bot):
@@ -183,7 +184,7 @@ async def user_main(cb: types.CallbackQuery, bot: Bot):
             return
 
         await cb.message.answer(
-            text='<b>Вы уже регестрировались на это мероприятие!</b>',
+            text='<b>Вы уже регистрировались на это мероприятие!</b>',
             reply_markup=await kb.main_user_kb())
     elif action == 'back':
         try:

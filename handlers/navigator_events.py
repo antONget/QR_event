@@ -11,7 +11,6 @@ router = Router()
 # in list[InputMedia]
 
 
-
 @router.callback_query(F.data.startswith('event_'))
 async def event_info(cb: types.CallbackQuery, bot: Bot):
     await cb.answer('')
