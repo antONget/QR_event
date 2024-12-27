@@ -28,7 +28,9 @@ class SubscribeOnChannel(BaseMiddleware):
             return await handler(event, data)
 
         await event.bot.send_message(chat_id=event.from_user.id,
-                                     text="Ты не подписался на канал!",
+                                     text=f'Привет, <i>{event.from_user.full_name}</i>! '
+                                            f'Этот бот позволит тебе посещать мероприятия с QR-кодом!'
+                                            "\n\n<b>Ты не подписался на канал!</b>",
                                      reply_markup=await kb.subscribe_kb())
 
 
