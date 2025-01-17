@@ -116,7 +116,7 @@ def keyboards_del_admin(list_admin, back, forward, count):
         text = row[1]
         button = f'controller_del_{row[0]}'
         buttons.append(InlineKeyboardButton(
-            text=text,
+            text=str(text),
             callback_data=button))
     button_back = InlineKeyboardButton(text='<<<<',
                                        callback_data=f'admin_del_back_{str(back)}')
