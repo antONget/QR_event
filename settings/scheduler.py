@@ -8,7 +8,8 @@ import datetime
 
 class EventsArchiver:
     def __init__(self):
-        self.scheduler = AsyncIOScheduler(timezone=datetime.timezone(datetime.timedelta(hours=6)))
+        # self.scheduler = AsyncIOScheduler(timezone=datetime.timezone(datetime.timedelta(hours=6)))
+        self.scheduler = AsyncIOScheduler(timezone='Asia/Omsk')
         self.interval_minutes = 3
 
     async def put_events_to_archive(self):
