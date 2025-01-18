@@ -228,6 +228,7 @@ async def process_forward_del_admin(callback: CallbackQuery, state: FSMContext) 
     except TelegramBadRequest:
         await callback.message.edit_text(text=f'Выберитe пользоватeля, которого вы хотите удалить из {role}',
                                          reply_markup=keyboard)
+    await callback.answer()
 
 
 # <<<<
@@ -252,6 +253,7 @@ async def process_back_del_admin(callback: CallbackQuery, state: FSMContext) -> 
     except TelegramBadRequest:
         await callback.message.edit_text(text=f'Выберитe пользоватeля, которого вы хотите удалить из {role}',
                                          reply_markup=keyboard)
+    await callback.answer()
 
 
 # подтверждение добавления админа в список
